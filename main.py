@@ -15,9 +15,6 @@ def create_db(cur):
                             phone TEXT
                             );''')
 
-
-
-
 def creat_client(cur, name=None, surname=None, email=None, phone=None):
 
         cur.execute("""INSERT INTO info(name, surname, email) VALUES(%s,%s,%s);""",
@@ -30,30 +27,65 @@ def add_phone(cur, PersonId, phone=None):
         cur.execute("""INSERT INTO phone_client(PersonId,phone) VALUES(%s,%s);""",
                     (PersonId, phone,))
 
+
 def change_client(cur, PersonId, name=None, surname=None, email=None, phone=None):
+    cur.execute("""
+           UPDATE info
+               SET name=%s, surname=%s, email=%s
+               WHERE (PersonId=%s) 
+       """, (name, surname, email, PersonId,))
+    cur.execute("""
+            UPDATE phone_client
+                SET phone=%s
+                WHERE PersonId=%s 
+        """, (PersonId, phone))
+
+def change_client_name(cur, PersonId, name=None):
+    cur.execute("""
+           UPDATE info
+               SET name=%s
+               WHERE (PersonId=%s) 
+       """, (name, PersonId,))
+def change_client_surname(cur, PersonId, surname=None):
+    cur.execute("""
+           UPDATE info
+               SET surname=%s
+               WHERE (PersonId=%s) 
+       """, (surname, PersonId,))
+
+def change_client_email(cur, PersonId, email=None):
         cur.execute("""
-               UPDATE info
-                   SET name=%s, surname=%s, email=%s
-                   WHERE PersonId=%s
-           """, (name, surname, email, PersonId,))
-        cur.execute("""
+            UPDATE info
+               SET email=%s
+               WHERE (PersonId=%s) 
+           """, (email, PersonId,))
+def change_client_phone(cur, PersonId, phone=None):
+    cur.execute("""
                 UPDATE phone_client
                     SET phone=%s
-                    WHERE PersonId=%s
+                    WHERE PersonId=%s 
             """, (PersonId, phone))
+
 
 def delete_client(cur, PersonId):
         cur.execute("""
             DELETE FROM info WHERE PersonId=%s;
         """, (PersonId,))
 
-def find_client(cur, name=None, surname=None, email=None, phone=None):
-        cur.execute("""
-            SELECT name, surname, email, phone FROM info i
-            JOIN phone_client p on i.PersonId = p.PersonId
-            WHERE (name=%s) or (surname=%s) or (email=%s) or (phone=%s)
-            """, (name, surname, email, phone))
-        print(cur.fetchone())
+def find_client(cur, **kwargs):
+    str = ' or '.join([f"{x} = '{y}'" for x, y in kwargs.items() if y])
+    cur.execute("""
+        SELECT name, surname, email, phone FROM info i
+        JOIN phone_client p on i.PersonId = p.PersonId
+        WHERE """ + str)
+    print(f"Информация о клиенте {cur.fetchall()}")
+# def find_client(cur, name=None, surname=None, email=None, phone=None):
+#     cur.execute("""
+#             SELECT name, surname, email, phone FROM info i
+#             JOIN phone_client p on i.PersonId = p.PersonId
+#             WHERE name  IN (%s)
+#             """, (name, ))
+#     print(cur.fetchone())
 
 
 #Удаление телефона
@@ -93,13 +125,22 @@ if __name__ == "__main__":
                     add_phone(cur, PersonId=input('Введите номер клиента: '), phone=input('Введите номер: '))
 
                 elif comanda == 7:
-                    find_client(cur, name=input("Введите имя: "), surname=input("Введите Фамилию: "),
+                    find_client(cur, name=input("Введите имя: ").title(), surname=input("Введите Фамилию: "),
                                   email=input("Введите емайл: "), phone=input("Введите Телефон: "))
 
                 elif comanda == 4:
-                    change_client(cur, PersonId=input("id: "), name=input("Введите имя: "),
-                                  surname=input("Введите Фамилию: "), email=input("Введите емайл: ")
-                                  , phone=input("Введите Телефон: "))
+                    print("Какое поле вы хотите изменить ?")
+                    pole = input("Имя/Фамилию/Емаил/Телефон или все?").lower()
+                    if pole == ("все"):
+                        change_client(cur, PersonId=input("id: "), name=input("Введите имя: "),
+                                           surname=input("Введите Фамилию: "), email=input("Введите емайл: ")
+                                           , phone=input("Введите Телефон: "))
+                    if pole == ("имя"):
+                        change_client_name(cur, PersonId=input("id: "), name=input("Введите имя: "))
+                    if pole == ("фамилию"):
+                        change_client_surname(cur, PersonId=input("id: "),surname=input("Введите Фамилию: "))
+                    if pole == ("email"):
+                        change_client_email(cur, PersonId=input("id: "), email=input("Введите емайл: "))
 
                 elif comanda == 6:
                     delete_client(cur, PersonId=input("Введите id клиента"))
